@@ -7,6 +7,7 @@ const uuid = require('uuid/v5');
 
 admin.initializeApp();
 
+const database = admin.database();
 const app = express();
 app.use(cors());
 
@@ -16,10 +17,7 @@ app.post('/', async (req, res) => {
   console.log(entry);
 
   try {
-    await admin
-      .database()
-      .ref('/entries')
-      .push(entry);
+    await database.ref('/entries').push(entry);
     return res.status(200).send(entry);
   } catch (error) {
     console.error(error);
@@ -29,24 +27,21 @@ app.post('/', async (req, res) => {
 
 // GET / method
 app.get('/', (req, res) => {
-  return admin
-    .database()
-    .ref('/entries')
-    .on(
-      'value',
-      snapshot => {
-        return res.status(200).send(snapshot.val());
-      },
-      error => {
-        console.error(error);
-        return res.status(500).send('Oh no! Error: ' + error);
-      }
-    );
+  return database.ref('/entries').on(
+    'value',
+    snapshot => {
+      return res.status(200).send(snapshot.val());
+    },
+    error => {
+      console.error(error);
+      return res.status(500).send('Oh no! Error: ' + error);
+    }
+  );
 });
 
 exports.entries = functions.https.onRequest(app);
 
-exports.userData = functions.admin.database
+exports.userData = functions.database
   .ref('/entries/{id}')
   .onCreate(snapshot => {
     const userVal = snapshot.val();
